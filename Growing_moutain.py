@@ -82,12 +82,57 @@ def opr_nap():
 		return 'error'
 
 
-def get_col_bal():
+def get_col_bal(list_point_new_polygon):
+	list_x_cordinat = []
+	list_y_cordinat = []
+
+	for i in list_point_new_polygon:
+		list_x_cordinat.append(i[0])
+		list_y_cordinat.append(i[1])
+
+	x_min = min(list_x_cordinat)
+	y_min = min(list_y_cordinat)
+	x_max = max(list_x_cordinat)
+	y_max = max(list_y_cordinat) 
+
+	point = []
+	col_point_in_polygon = 0
+	status = False
+
+	point = [x_min, y_min]
+	while point != [x_max+20, y_min]:
+		step = 0
+		while True:
+			c.delete('test')
+			x = point[0]
+			y = point[1] + 20*step  
+
+			if [x, y] in list_point_new_polygon:
+				if status == False:
+					status = True
+					col_point_in_polygon -= 1
+				else:
+					status = False
+
+			if status == True:
+				col_point_in_polygon +=1
+
+			step += 1
+			# c.create_oval(x - 4, y - 4, x + 4, y + 4, fill='red', tag='test')
+			# print(col_point_in_polygon)
+			# input()
+
+			if y == y_max:
+				point[0] += 20
+				break
+
+
+def create_new_polygon():
 	global list_point_polygon, list_point_capturer
 
 	# pdb.set_trace()
 	# построение нового полигона
-	list_point_new_polygon = [list_point_polygon[0]]
+	list_point_new_polygon = []
 	# list_point_polygon.append(list_point_polygon[0])
 	for i in range(0, len(list_point_polygon)-1):
 		x1 = list_point_polygon[i][0]
@@ -99,56 +144,64 @@ def get_col_bal():
 
 		# NW
 		if x1 > x2 and y1 > y2:
-			if [x1, y2] in list_point_new_polygon:
-				list_point_new_polygon.pop()
-				list_point_new_polygon.append([x2, y2])
-			else:
+			if [x1, y1] in list_point_new_polygon:
 				list_point_new_polygon.append([x1, y2])
-				list_point_new_polygon.append([x2, y2])
-				
+			else:
+				list_point_new_polygon.append([x1, y1])
+				list_point_new_polygon.append([x1, y2])
+				# list_point_new_polygon.append([x2, y2])
 
 		# NE
 		elif x1 < x2 and y1 > y2:
 			if [x2, y1] in list_point_new_polygon:
-				list_point_new_polygon.pop()
+				if [x1, y1] in list_point_new_polygon:
+					list_point_new_polygon.remove([x1, y1])
 				list_point_new_polygon.append([x2, y2])
 			else:
+				# list_point_new_polygon.append([x1, y1])
 				list_point_new_polygon.append([x2, y1])
 				list_point_new_polygon.append([x2, y2])
 
 		# SW
 		elif x1 > x2 and y1 < y2:
 			if [x2, y1] in list_point_new_polygon:
-				list_point_new_polygon.pop()
+				if [x1, y1] in list_point_new_polygon:
+					list_point_new_polygon.remove([x1, y1])
 				list_point_new_polygon.append([x2, y2])
 			else:
+				list_point_new_polygon.append([x1, y1])
 				list_point_new_polygon.append([x2, y1])
 				list_point_new_polygon.append([x2, y2])
 
-
 		# SE
 		elif x1 < x2 and y1 < y2:
-			if [x1, y2] in list_point_new_polygon:
-				list_point_new_polygon.pop()
-				list_point_new_polygon.append([x2, y2])
-			else:
+			if [x1, y1] in list_point_new_polygon:
+				if [x1, y2] in list_point_new_polygon:
+					list_point_new_polygon.remove([x1, y1])
 				list_point_new_polygon.append([x1, y2])
-				list_point_new_polygon.append([x2, y2])
+			else:
+				list_point_new_polygon.append([x1, y1])
+				list_point_new_polygon.append([x1, y2])	
 		else:
 			if [x2, y2] in list_point_new_polygon:
-				list_point_new_polygon.pop()
+				pass
 			else:
+				list_point_new_polygon.append([x1, y1])
 				list_point_new_polygon.append([x2, y2])
-				
-	if list_point_polygon[0][0] != list_point_polygon[-1][0] and list_point_polygon[0][1] != list_point_polygon[-1][1]:
-		list_point_new_polygon.remove(list_point_polygon[0])
+			
+	try:
+		if list_point_polygon[0][0] != list_point_polygon[-1][0] and list_point_polygon[0][1] != list_point_polygon[-1][1]:
+			list_point_new_polygon.remove(list_point_polygon[0])
+	except Exception as e:
+		pass
 
-	c.create_polygon(list_point_new_polygon, width=2, outline='red')
+	# for i in range(0, len(list_point_new_polygon)-4):
+	# 	if list_point_new_polygon[i] == list_point_new_polygon[i+2]:
+	# 		list_point_new_polygon.pop(i+1)
 
-	# for i in list_point_new_polygon:
-	# 	c.delete('test')
-	# 	c.create_oval(i[0]-4, i[1]-4, i[0]+4, i[1]+4, fill='blue', tag='test')
-	# 	input()
+	# c.create_polygon(list_point_new_polygon, width=2, outline='red')
+
+	get_col_bal(list_point_new_polygon)
 
 
 def add_points_in_capturer():
@@ -193,7 +246,7 @@ def creat_polygon():
 	delete_points_from_capturer()
 	add_points_in_capturer()
 	c.create_polygon(list_point_polygon, fill='green', outline='black')
-	get_col_bal()
+	create_new_polygon()
 	instaler_begin_setings()
 
 	# проверка точек
