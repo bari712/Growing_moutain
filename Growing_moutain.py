@@ -8,11 +8,23 @@ status_capturer = False
 list_point_capturer = []
 last_x = 0
 last_y = 0
-color = 'green'
+col_bal = 0
+players = []
+
+# for i in players:
+# 		if i.status == True:
+# 			color = i.color
+# 			i.status = False
+# 			if players.index(i) == len(players):
+# 				i = players[0]
+# 				i.status = True
+# 			else:
+# 				index = players.index(i)+1
+# 				players[index].status = True
 
 
 def instaler_begin_setings():
-	global list_point_capturer, corect_x, corect_y, last_x, last_y, status_capturer, list_point_polygon, col_hod
+	global list_point_capturer, corect_x, corect_y, last_x, last_y, status_capturer, list_point_polygon, col_hod, players, color, player
 
 	col_hod = 10
 	list_point_polygon = []
@@ -22,6 +34,119 @@ def instaler_begin_setings():
 	corect_x = None
 	corect_y = None
 
+	player = players[0]
+	color = player.color
+
+	players.append(players.pop(0))
+
+
+class Start_window():
+	def __init__(self, title):
+		self.title = title
+
+
+	def init_start_window(self):
+		self.window = Tk()
+		self.window.title(self.title)
+
+		self.new_game = Button(text='New game')
+		self.online_game = Button(text='Online game')
+		self.settings = Button(text='Settings')
+		self.exit = Button(text='Exit')
+
+		self.new_game.bind('<Button-1>', Event.start_game)
+
+		self.new_game.pack()
+		self.online_game.pack()
+		self.settings.pack()
+		self.exit.pack()
+
+		self.window.mainloop()
+
+
+class Event():
+	
+	def start_game(event):
+		global root
+
+		root.window.destroy()
+		root = Game_field('Growing mountain', 600, 600)
+		root.init_game_field()
+
+
+class Game_field():
+	def __init__(self, title, w_canvas, h_canvas):
+		self.title = title
+		self.w_canvas = w_canvas
+		self.h_canvas = h_canvas
+
+
+	def init_game_field(self):
+		global players, Player_1, Player_2
+		self.window = Tk()
+		self.window.title(self.title)
+		self.c = Canvas(self.window, width=self.w_canvas, height=self.h_canvas, bg='white')
+		
+		players.append(Player('Player_1', 'green', True))
+		players.append(Player('Player_2', 'orange', False))
+
+		Player_1 = players[0]
+		Player_2 = players[1]
+		
+		self.name_player_1 = Label(text='Player_1')
+		self.bals_player_1 = Label(text=str(Player_1.bals))
+		self.name_player_2 = Label(text='Player_2')
+		self.bals_player_2 = Label(text=str(Player_2.bals))
+
+		root.init_canvas()
+
+		instaler_begin_setings()
+		self.c.bind('<Motion>', move)
+		self.c.bind('<Button-1>', capturer)
+
+		self.name_player_1.pack()
+		self.bals_player_1.pack()
+		self.name_player_2.pack()
+		self.bals_player_2.pack()
+		self.c.pack()
+		
+		self.window.mainloop()
+
+	def init_canvas(self):
+		for i in range(int(self.w_canvas/20)):
+			x_line = 20 * i
+			self.c.create_line(x_line, 0, x_line, self.h_canvas)
+
+		for i in range(int(self.h_canvas/20)):
+			y_line = 20 * i
+			self.c.create_line(0, y_line, self.w_canvas, y_line)
+
+		for i in range(int(self.w_canvas/20)):
+			x_line = 20 * i
+			for i in range(int(self.h_canvas/20)):
+				y_line = 20 * i
+				self.c.create_oval((x_line - 2, y_line - 2), (x_line + 2, y_line + 2), fill='black')
+
+		list_points_center = []
+
+		for i in range(0, self.w_canvas+1, 20):
+			list_points_center.append([i, self.h_canvas-20])
+
+		for i in range(self.w_canvas, -1, -20):
+			list_points_center.append([i, self.h_canvas])
+
+		center = self.c.create_polygon(list_points_center, fill='blue', outline='black')
+
+		list_point_capturer = append_point_in_list_point_capturer(self.c.coords(center))
+
+
+class Player():
+	def __init__(self, name, color, status):
+		self.name = name
+		self.color = color
+		self.status = status
+		self.bals = 0
+		
 
 def append_point_in_list_point_capturer(list_point):
 	'''Добавляет центр в список точек привязки'''
@@ -83,6 +208,8 @@ def opr_nap():
 
 
 def get_col_bal(list_point_new_polygon):
+	global col_bal
+
 	list_x_cordinat = []
 	list_y_cordinat = []
 
@@ -103,7 +230,6 @@ def get_col_bal(list_point_new_polygon):
 	while point != [x_max+20, y_min]:
 		step = 0
 		while True:
-			c.delete('test')
 			x = point[0]
 			y = point[1] + 20*step  
 
@@ -118,29 +244,31 @@ def get_col_bal(list_point_new_polygon):
 				col_point_in_polygon +=1
 
 			step += 1
-			# c.create_oval(x - 4, y - 4, x + 4, y + 4, fill='red', tag='test')
-			# print(col_point_in_polygon)
-			# input()
 
 			if y == y_max:
 				point[0] += 20
 				break
+
+	player.bals += int(col_point_in_polygon + (len(list_point_new_polygon)/2) - 1)
+	update_bals_players()
+
+
+def update_bals_players():
+	global Player_1, Player_2
+	root.bals_player_1['text'] = str(Player_1.bals)
+	root.bals_player_2['text'] = str(Player_2.bals)
 
 
 def create_new_polygon():
 	global list_point_polygon, list_point_capturer
 
 	# pdb.set_trace()
-	# построение нового полигона
 	list_point_new_polygon = []
-	# list_point_polygon.append(list_point_polygon[0])
 	for i in range(0, len(list_point_polygon)-1):
 		x1 = list_point_polygon[i][0]
 		y1 = list_point_polygon[i][1]
 		x2 = list_point_polygon[i+1][0]
 		y2 = list_point_polygon[i+1][1]
-
-		# list_point_new_polygon.append(list_point_polygon[i])
 
 		# NW
 		if x1 > x2 and y1 > y2:
@@ -149,7 +277,6 @@ def create_new_polygon():
 			else:
 				list_point_new_polygon.append([x1, y1])
 				list_point_new_polygon.append([x1, y2])
-				# list_point_new_polygon.append([x2, y2])
 
 		# NE
 		elif x1 < x2 and y1 > y2:
@@ -158,7 +285,6 @@ def create_new_polygon():
 					list_point_new_polygon.remove([x1, y1])
 				list_point_new_polygon.append([x2, y2])
 			else:
-				# list_point_new_polygon.append([x1, y1])
 				list_point_new_polygon.append([x2, y1])
 				list_point_new_polygon.append([x2, y2])
 
@@ -195,10 +321,12 @@ def create_new_polygon():
 	except Exception as e:
 		pass
 
-	# for i in range(0, len(list_point_new_polygon)-4):
-	# 	if list_point_new_polygon[i] == list_point_new_polygon[i+2]:
-	# 		list_point_new_polygon.pop(i+1)
+	newlist = []
+	for i in list_point_new_polygon:
+		if i not in newlist:
+			newlist.append(i)
 
+	list_point_new_polygon = newlist
 	# c.create_polygon(list_point_new_polygon, width=2, outline='red')
 
 	get_col_bal(list_point_new_polygon)
@@ -245,11 +373,12 @@ def creat_polygon():
 
 	delete_points_from_capturer()
 	add_points_in_capturer()
-	c.create_polygon(list_point_polygon, fill='green', outline='black')
+	root.c.create_polygon(list_point_polygon, fill=color, outline='black')
 	create_new_polygon()
 	instaler_begin_setings()
 
 	# проверка точек
+
 
 def test():
 	global list_point_capturer, corect_x, corect_y, last_x, last_y, status_capturer, list_point_polygon, col_hod
@@ -276,9 +405,9 @@ def test():
 
 
 def move(event):
-	global list_point_capturer, corect_x, corect_y, last_x, last_y, status_capturer, list_point_polygon, col_hod
+	global list_point_capturer, corect_x, corect_y, last_x, last_y, status_capturer, list_point_polygon, col_hod, color
 
-	c.delete('capturer')
+	root.c.delete('capturer')
 	x = event.x
 	y = event.y
 	corect_x = x % 20
@@ -296,13 +425,13 @@ def move(event):
 
 	if status_capturer == True:
 		if test():
-			c.create_oval((corect_x - 4, corect_y - 4), (corect_x + 4, corect_y + 4), fill=color, tag='capturer')
-			c.create_line(last_x, last_y, corect_x, corect_y, width=3, fill=color, tag='capturer')
+			root.c.create_oval((corect_x - 4, corect_y - 4), (corect_x + 4, corect_y + 4), fill=color, tag='capturer')
+			root.c.create_line(last_x, last_y, corect_x, corect_y, width=3, fill=color, tag='capturer')
 	else:
 		if list_point_capturer.count([corect_x, corect_y]):
 			last_x = corect_x
 			last_y = corect_y
-			c.create_oval((corect_x - 4, corect_y - 4), (corect_x + 4, corect_y + 4), fill=color, tag='capturer')
+			root.c.create_oval((corect_x - 4, corect_y - 4), (corect_x + 4, corect_y + 4), fill=color, tag='capturer')
 
 
 def capturer(event):
@@ -310,7 +439,7 @@ def capturer(event):
 
 	if status_capturer == True:
 		if test():
-			c.create_line(last_x, last_y, corect_x, corect_y, width=3, fill=color, tag='polygon')
+			root.c.create_line(last_x, last_y, corect_x, corect_y, width=3, fill=color, tag='polygon')
 			list_point_polygon.append([corect_x, corect_y])
 			last_x = corect_x
 			last_y = corect_y
@@ -329,12 +458,17 @@ def off(event):
 
 
 def main():
-	root = Tk()
-	create_game_field(root, 200, 200)
-	c.bind('<Motion>', move)
-	c.bind('<Button-1>', capturer)
-	c.bind('<Button-3>', off)
-	root.mainloop()
+	global root
+
+	root = Start_window('Growing mountain')
+	root.init_start_window()
+
+	# root.new_game.bind('<Button-1>', Event.start_game())
+	# create_game_field(root, 200, 200)
+	# c.bind('<Motion>', move)
+	# c.bind('<Button-1>', capturer)
+	# c.bind('<Button-3>', off)
+	# root.mainloop()
 
 
 if __name__ == '__main__':
